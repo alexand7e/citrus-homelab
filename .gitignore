@@ -1,0 +1,24 @@
+# Secrets
+security/htpasswd
+security/sshd_config
+notes/credentials.md
+
+# SSH keys
+*.key
+*.pem
+id_ed25519
+id_rsa
+
+# Binaries
+*.apk
+*.tar.gz
+filebrowser
+
+# OS
+.DS_Store
+*.swp
+*.swo
+*~
+
+# Temp
+/tmp/
