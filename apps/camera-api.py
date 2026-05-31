@@ -5,7 +5,7 @@ from urllib.parse import urlparse, parse_qs
 
 LENSCAST = "http://127.0.0.1:41737"
 PKG = "com.opencode.multilensipcam"
-STREAM_ACTIONS = {"start": True, "stop": False, "toggle": "toggle"}
+STREAM_ACTIONS = {"start": "start", "stop": "stop", "toggle": "toggle"}
 
 class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
@@ -25,9 +25,8 @@ class Handler(BaseHTTPRequestHandler):
                 self._json(400, {"error": "invalid action", "valid": list(STREAM_ACTIONS.keys()) + ["launch"]})
                 return
             try:
-                payload = json.dumps({"streaming": STREAM_ACTIONS[action]}).encode()
-                req = urllib.request.Request(f"{LENSCAST}/api/control", data=payload, headers={"Content-Type": "application/json"}, method="POST")
-                urllib.request.urlopen(req, timeout=5)
+                url = f"{LENSCAST}/api/{STREAM_ACTIONS[action]}"
+                urllib.request.urlopen(url, timeout=5)
                 self._json(200, {"action": action, "status": "ok"})
             except Exception as e:
                 self._json(502, {"error": str(e)})

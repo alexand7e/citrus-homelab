@@ -41,7 +41,7 @@ POCO Citrus (Redmi 9) transformado em servidor homelab, acessível via Tailscale
 |-----|--------|--------|
 | Termux | Terminal Linux | F-Droid |
 | Termux:API | Acesso a hardware | F-Droid |
-| Termux:Boot | Auto-início no boot | F-Droid |
+| Termux:Boot | Auto-início no boot | GitHub (mesmo build do Termux) |
 | Tailscale | VPN mesh | APK direto |
 | LensCast | Câmera IP MJPEG/RTSP | Build local (GitHub) |
 | Syncthing | Sincronização de arquivos | F-Droid |
