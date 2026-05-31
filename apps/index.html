@@ -145,7 +145,11 @@ function checkCamStatus() {
     fetch('/api/status', {credentials: 'same-origin'})
         .then(function(r) { return r.json(); })
         .then(function(data) {
-            if (data.camera === 'online') {
+            if (data.camera === 'streaming') {
+                dot.className = 'dot on';
+                txt.textContent = 'streaming ' + (data.fps || 0) + ' fps';
+                if (!img.src.includes('/cam/')) img.src = '/cam/';
+            } else if (data.camera === 'online') {
                 dot.className = 'dot on';
                 txt.textContent = 'online';
                 if (!img.src.includes('/cam/')) img.src = '/cam/';

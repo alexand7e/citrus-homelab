@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
-import json, socket, urllib.request
+import json, subprocess, time, urllib.request
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from urllib.parse import urlparse, parse_qs
 
 LENSCAST = "http://127.0.0.1:41737"
-CAMERA_PORT = 41737
-ACTIONS = {"start": True, "stop": False, "toggle": "toggle"}
+PKG = "com.opencode.multilensipcam"
+STREAM_ACTIONS = {"start": True, "stop": False, "toggle": "toggle"}
 
 class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
@@ -13,46 +13,53 @@ class Handler(BaseHTTPRequestHandler):
         if path == "/api/camera":
             params = parse_qs(urlparse(self.path).query)
             action = params.get("action", [""])[0]
-            if action not in ACTIONS:
-                self.send_response(400)
-                self.send_header("Content-Type", "application/json")
-                self.send_header("Access-Control-Allow-Origin", "*")
-                self.end_headers()
-                self.wfile.write(json.dumps({"error": "invalid action", "valid": list(ACTIONS.keys())}).encode())
+            if action == "launch":
+                try:
+                    subprocess.run(["am", "start", "-n", f"{PKG}/.MainActivity"], capture_output=True, timeout=5)
+                    time.sleep(3)
+                    self._json(200, {"action": "launch", "status": "ok"})
+                except Exception as e:
+                    self._json(500, {"error": str(e)})
+                return
+            if action not in STREAM_ACTIONS:
+                self._json(400, {"error": "invalid action", "valid": list(STREAM_ACTIONS.keys()) + ["launch"]})
                 return
             try:
-                payload = json.dumps({"streaming": ACTIONS[action]}).encode()
+                payload = json.dumps({"streaming": STREAM_ACTIONS[action]}).encode()
                 req = urllib.request.Request(f"{LENSCAST}/api/control", data=payload, headers={"Content-Type": "application/json"}, method="POST")
-                resp = urllib.request.urlopen(req, timeout=5)
-                self.send_response(200)
-                self.send_header("Content-Type", "application/json")
-                self.send_header("Access-Control-Allow-Origin", "*")
-                self.end_headers()
-                self.wfile.write(json.dumps({"action": action, "status": "ok"}).encode())
+                urllib.request.urlopen(req, timeout=5)
+                self._json(200, {"action": action, "status": "ok"})
             except Exception as e:
-                self.send_response(502)
-                self.send_header("Content-Type", "application/json")
-                self.send_header("Access-Control-Allow-Origin", "*")
-                self.end_headers()
-                self.wfile.write(json.dumps({"error": str(e)}).encode())
+                self._json(502, {"error": str(e)})
         elif path == "/api/status":
-            s = socket.socket()
-            s.settimeout(1)
-            online = False
+            streaming = False
+            app_running = False
             try:
-                s.connect(("127.0.0.1", CAMERA_PORT))
-                online = True
-                s.close()
+                req = urllib.request.Request(f"{LENSCAST}/api/debug/stream", method="GET")
+                resp = urllib.request.urlopen(req, timeout=3)
+                data = json.loads(resp.read())
+                streaming = data.get("streaming", False)
+                app_running = data.get("serverRunning", False)
+                mjpeg_clients = data.get("mjpegClients", 0)
+                mjpeg_fps = data.get("mjpeg", {}).get("approxReceivedFps", 0)
+                self._json(200, {
+                    "camera": "streaming" if streaming else "offline",
+                    "app": "running" if app_running else "stopped",
+                    "fps": round(mjpeg_fps, 1),
+                    "clients": mjpeg_clients
+                })
             except:
-                pass
-            self.send_response(200)
-            self.send_header("Content-Type", "application/json")
-            self.send_header("Access-Control-Allow-Origin", "*")
-            self.end_headers()
-            self.wfile.write(json.dumps({"camera": "online" if online else "offline"}).encode())
+                self._json(200, {"camera": "offline", "app": "stopped", "fps": 0, "clients": 0})
         else:
             self.send_response(404)
             self.end_headers()
+
+    def _json(self, code, data):
+        self.send_response(code)
+        self.send_header("Content-Type", "application/json")
+        self.send_header("Access-Control-Allow-Origin", "*")
+        self.end_headers()
+        self.wfile.write(json.dumps(data).encode())
 
     def log_message(self, *args):
         pass

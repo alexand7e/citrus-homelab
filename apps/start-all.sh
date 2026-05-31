@@ -3,21 +3,26 @@ echo "========================================="
 echo "  POCO HOMELAB - Starting"
 echo "========================================="
 
-echo "[1/5] SSH..."
+echo "[1/6] SSH..."
 sshd
 
-echo "[2/5] FileBrowser..."
+echo "[2/6] Camera API..."
+pkill -f camera-api 2>/dev/null
+sleep 1
+nohup python3 ~/camera-api.py > /dev/null 2>&1 & disown
+
+echo "[3/6] FileBrowser..."
 pkill -f filebrowser 2>/dev/null
 sleep 1
 nohup ~/filebrowser -d ~/filebrowser.db &>/dev/null &
 
-echo "[3/5] Nginx..."
+echo "[4/6] Nginx..."
 nginx
 
-echo "[4/5] Syncthing..."
+echo "[5/6] Syncthing..."
 syncthing &
 
-echo "[5/5] Tailscale..."
+echo "[6/6] Tailscale..."
 tailscaled --tun=userspace-networking --socks5-server=localhost:1055 &
 sleep 2
 tailscale up --accept-routes --accept-dns 2>/dev/null || echo "  Run 'tailscale up' manually"
