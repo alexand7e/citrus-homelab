@@ -1,0 +1,1 @@
+{"supported_functions": ["program", "read", "nop", "patch", "configure", "setbootablestoragedrive", "erase", "power", "firmwarewrite", "getstorageinfo", "benchmark", "emmc", "ufs", "fixgpt", "getsha256digest"], "programmer": "/tmp/opencode/prog_firehose_9T.elf", "serial": 3225816563}
